@@ -1,0 +1,885 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pamoja — Community Loans</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  :root{
+    --gd:#1A3A2A;--gm:#2D5A3D;--gl:#4A8C63;--gp:#E8F5EE;
+    --sand:#F5EDD6;--sand2:#E8D9B8;--sand3:#DDD0B0;
+    --amb:#D4821A;--ambl:#F5A940;--ambp:#FFF4E0;
+    --white:#FFFFFF;--err:#B91C1C;--errp:#FEF2F2;
+    --txt:#1A3A2A;--txt2:#4A6A5A;--txt3:#8AA898;
+    --shadow: 0 10px 30px rgba(26,58,42,0.1);
+    --shadow-sm: 0 4px 12px rgba(26,58,42,0.08);
+  }
+  html,body{height:100%;background:linear-gradient(135deg, var(--sand) 0%, #f9f3eb 100%);font-family:'Inter',sans-serif;color:var(--txt);font-size:15px}
+  button{font-family:'Inter',sans-serif;cursor:pointer;border:none;outline:none}
+  input{font-family:'Inter',sans-serif;outline:none}
+  input::placeholder{color:var(--txt3)}
+  .serif{font-family:'Playfair Display',serif}
+
+  .screen{display:none;flex-direction:column;min-height:100vh;max-width:420px;margin:0 auto;animation:fadeIn .4s ease}
+  .screen.active{display:flex}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes spin{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}
+
+  .auth-wrap{flex:1;display:flex;flex-direction:column;justify-content:center;padding:32px 24px 48px}
+  .auth-logo{font-family:'Playfair Display',serif;font-size:36px;font-weight:700;color:var(--gd);text-align:center;margin-bottom:8px;background:linear-gradient(135deg, var(--gd), var(--gl));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+  .auth-sub{text-align:center;font-size:14px;color:var(--txt2);margin-bottom:40px;line-height:1.5}
+  .auth-tabs{display:flex;background:var(--white);border-radius:14px;padding:4px;margin-bottom:32px;gap:4px;box-shadow:var(--shadow-sm)}
+  .auth-tab{flex:1;padding:11px;border-radius:11px;font-size:14px;font-weight:500;background:none;border:none;color:var(--txt2);transition:all .2s;position:relative}
+  .auth-tab.active{background:linear-gradient(135deg, var(--gd), var(--gm));color:var(--white);box-shadow:0 4px 12px rgba(74,140,99,0.2)}
+  .field-group{margin-bottom:18px}
+  .field-label{font-size:13px;font-weight:600;color:var(--txt);margin-bottom:8px;display:block;letter-spacing:.02em}
+  .field-input{width:100%;padding:14px 16px;border:1.5px solid var(--sand2);border-radius:12px;font-size:15px;color:var(--txt);background:var(--white);transition:all .2s;box-shadow:0 2px 4px rgba(0,0,0,0.02)}
+  .field-input:focus{border-color:var(--gl);box-shadow:0 0 0 3px rgba(74,140,99,0.1);background:var(--white)}
+  .field-input.err{border-color:var(--err);background:var(--errp)}
+  .field-hint{font-size:12px;color:var(--txt3);margin-top:6px}
+  .btn-main{width:100%;padding:16px;border-radius:14px;background:linear-gradient(135deg, var(--gd), var(--gm));color:var(--white);font-size:16px;font-weight:600;margin-top:24px;transition:all .2s;box-shadow:0 6px 20px rgba(74,140,99,0.2);letter-spacing:.02em}
+  .btn-main:active{transform:scale(.98);box-shadow:0 3px 10px rgba(74,140,99,0.15)}
+  .btn-main:disabled{opacity:.4;cursor:not-allowed;transform:none}
+  .btn-main.loading::after{content:'';display:inline-block;width:16px;height:16px;margin-left:8px;border:2px solid rgba(255,255,255,.3);border-top-color:white;border-radius:50%;animation:spin 1s linear infinite}
+  .err-msg{font-size:13px;color:var(--err);text-align:center;margin-top:10px;min-height:20px;font-weight:500}
+
+  .topbar{display:flex;align-items:center;justify-content:space-between;padding:60px 20px 20px;background:transparent}
+  .topbar-title{font-family:'Playfair Display',serif;font-size:24px;font-weight:700;color:var(--gd)}
+  .topbar-back{width:40px;height:40px;border-radius:50%;background:var(--white);display:flex;align-items:center;justify-content:center;font-size:20px;color:var(--gd);transition:all .2s;box-shadow:var(--shadow-sm);cursor:pointer}
+  .topbar-back:active{background:var(--gp);transform:scale(.95)}
+
+  .balance-card{margin:16px 16px 24px;background:linear-gradient(135deg, #1A3A2A 0%, #2D5A3D 100%);border-radius:20px;padding:28px 24px;position:relative;overflow:hidden;box-shadow:0 12px 32px rgba(26,58,42,0.25)}
+  .balance-card::before{content:'';position:absolute;top:-60px;right:-60px;width:160px;height:160px;border-radius:50%;background:rgba(255,255,255,.08);animation:float 6s ease-in-out infinite}
+  .balance-card::after{content:'';position:absolute;bottom:-30px;left:20px;width:100px;height:100px;border-radius:50%;background:rgba(255,255,255,.05)}
+  @keyframes float{0%,100%{transform:translateY(0px)}50%{transform:translateY(-10px)}}
+  .bal-label{font-size:12px;color:rgba(255,255,255,.65);font-weight:600;letter-spacing:.08em;text-transform:uppercase;margin-bottom:6px;position:relative;z-index:1}
+  .bal-amount{font-family:'Playfair Display',serif;font-size:42px;font-weight:700;color:var(--white);line-height:1.1;position:relative;z-index:1;text-shadow:0 2px 4px rgba(0,0,0,0.1)}
+  .bal-sub{font-size:13px;color:rgba(255,255,255,.6);margin-top:6px;position:relative;z-index:1}
+  .bal-chips{display:flex;gap:10px;margin-top:18px;position:relative;z-index:1;flex-wrap:wrap}
+  .bal-chip{padding:7px 16px;border-radius:20px;font-size:13px;font-weight:600;backdrop-filter:blur(10px)}
+  .chip-owe{background:rgba(213,130,26,.2);color:#FAC775;border:1px solid rgba(213,130,26,.3)}
+  .chip-owed{background:rgba(255,255,255,.15);color:#9FE1CB;border:1px solid rgba(255,255,255,.2)}
+
+  .quick-row{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;padding:0 16px 24px}
+  .quick-btn{display:flex;flex-direction:column;align-items:center;gap:10px;background:var(--white);border-radius:18px;padding:18px 10px;border:none;transition:all .2s;box-shadow:var(--shadow-sm);cursor:pointer}
+  .quick-btn:active{transform:scale(.96);background:#f9f7f4}
+  .q-icon{width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:600;transition:all .2s}
+  .qi-green{background:linear-gradient(135deg, var(--gp), #d4ede5);color:var(--gd)}
+  .qi-amber{background:linear-gradient(135deg, var(--ambp), #ffd699);color:var(--amb)}
+  .qi-blue{background:linear-gradient(135deg, #E8F0FF, #cfe0ff);color:#185FA5}
+  .q-label{font-size:12px;font-weight:600;color:var(--txt);text-align:center}
+
+  .section-bar{display:flex;justify-content:space-between;align-items:center;padding:0 20px;margin-bottom:14px}
+  .section-title{font-size:14px;font-weight:600;color:var(--txt);letter-spacing:.02em}
+  .section-link{font-size:13px;color:var(--gl);font-weight:600;background:none;border:none;transition:all .2s;cursor:pointer}
+  .section-link:active{opacity:.7}
+
+  .person-list{padding:0 16px 20px}
+  .person-card{background:var(--white);border-radius:16px;padding:16px;margin-bottom:10px;display:flex;align-items:center;gap:14px;transition:all .2s;box-shadow:var(--shadow-sm);cursor:pointer}
+  .person-card:active{background:var(--gp);transform:translateX(2px)}
+  .p-avatar{width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:16px;flex-shrink:0;overflow:hidden;box-shadow:0 2px 8px rgba(74,140,99,0.15)}
+  .p-info{flex:1;min-width:0}
+  .p-name{font-size:15px;font-weight:600;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .p-sub{font-size:12px;color:var(--txt3);margin-top:3px;font-weight:500}
+  .p-right{text-align:right;flex-shrink:0}
+  .p-amount{font-size:16px;font-weight:700}
+  .amount-red{color:#B91C1C}
+  .amount-green{color:var(--gl)}
+  .empty-state{text-align:center;padding:60px 20px;color:var(--txt3);font-size:14px}
+  .empty-state .empty-icon{font-size:48px;margin-bottom:16px;opacity:.6}
+
+  .pay-wrap{flex:1;padding:0 20px 40px;overflow-y:auto}
+  .token-box{background:var(--white);border-radius:16px;padding:20px;margin-bottom:18px;box-shadow:var(--shadow-sm)}
+  .token-input-row{display:flex;gap:10px;align-items:center}
+  .token-input{flex:1;padding:14px 16px;border:2px solid var(--sand2);border-radius:12px;font-size:14px;letter-spacing:.1em;font-weight:600;color:var(--gd);background:linear-gradient(135deg, var(--gp), #f0fbf7);transition:all .2s;font-family:'Courier New',monospace}
+  .token-input:focus{border-color:var(--gl);box-shadow:0 0 0 3px rgba(74,140,99,0.1)}
+  .scan-btn{width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg, var(--gd), var(--gm));color:var(--white);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;transition:all .2s;box-shadow:var(--shadow-sm);cursor:pointer}
+  .scan-btn:active{transform:scale(.94)}
+  .resolved-person{display:flex;align-items:center;gap:12px;padding:14px;background:linear-gradient(135deg, var(--gp), #d4ede5);border-radius:14px;margin-top:14px;border:1px solid rgba(74,140,99,0.2)}
+  .resolved-person.hidden{display:none}
+  .amount-big{font-family:'Playfair Display',serif;font-size:48px;font-weight:700;color:var(--gd);text-align:center;padding:24px 0 10px}
+  .amount-big-wrap{background:var(--white);border-radius:16px;padding:10px 20px 18px;margin-bottom:18px;box-shadow:var(--shadow-sm)}
+  .currency-label{text-align:center;font-size:12px;color:var(--txt3);margin-bottom:6px;font-weight:600}
+  .amount-numpad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:0 4px}
+  .an-btn{padding:14px;border-radius:12px;background:var(--white);border:1.5px solid var(--sand2);font-size:18px;font-weight:600;color:var(--gd);transition:all .1s;box-shadow:var(--shadow-sm);cursor:pointer}
+  .an-btn:active{background:var(--gp);border-color:var(--gl);transform:scale(.94)}
+  .an-btn.del{font-size:16px;color:var(--txt2)}
+  .pay-note{width:100%;padding:14px 16px;border:1.5px solid var(--sand2);border-radius:12px;font-size:14px;color:var(--txt);background:var(--white);resize:none;margin-bottom:18px;transition:all .2s;box-shadow:var(--shadow-sm);font-family:'Inter',sans-serif}
+  .pay-note:focus{border-color:var(--gl);box-shadow:0 0 0 3px rgba(74,140,99,0.1)}
+
+  .token-display-card{margin:20px 16px;background:linear-gradient(135deg, #1A3A2A 0%, #2D5A3D 100%);border-radius:24px;padding:36px 28px;text-align:center;box-shadow:0 12px 32px rgba(26,58,42,0.25);position:relative;overflow:hidden}
+  .token-display-card::before{content:'';position:absolute;top:-40px;right:-40px;width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,.06)}
+  .token-code{font-family:'Courier New',monospace;font-size:36px;font-weight:700;color:var(--white);letter-spacing:.2em;margin:16px 0;position:relative;z-index:1;text-shadow:0 2px 4px rgba(0,0,0,0.2);word-break:break-all}
+  .token-lbl{font-size:12px;color:rgba(255,255,255,.7);letter-spacing:.1em;text-transform:uppercase;font-weight:600;position:relative;z-index:1}
+  .token-hint{font-size:13px;color:rgba(255,255,255,.7);margin-top:12px;line-height:1.6;position:relative;z-index:1}
+  .copy-btn{display:inline-flex;align-items:center;gap:7px;margin-top:18px;padding:11px 22px;border-radius:20px;background:rgba(255,255,255,.15);color:rgba(255,255,255,.95);font-size:14px;font-weight:600;border:1px solid rgba(255,255,255,.2);transition:all .2s;backdrop-filter:blur(10px);cursor:pointer}
+  .copy-btn:active{background:rgba(255,255,255,.25);transform:scale(.96)}
+
+  .tx-item{display:flex;align-items:center;gap:12px;padding:14px 0;border-bottom:1px solid var(--sand2)}
+  .tx-icon{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:600;flex-shrink:0;box-shadow:var(--shadow-sm)}
+  .tx-body{flex:1;min-width:0}
+  .tx-name{font-size:14px;font-weight:600;color:var(--txt)}
+  .tx-note{font-size:12px;color:var(--txt3);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .tx-right{text-align:right;flex-shrink:0}
+  .tx-amount{font-size:15px;font-weight:700}
+  .tx-date{font-size:11px;color:var(--txt3);margin-top:2px;font-weight:500}
+  .color-red{color:#B91C1C}
+  .color-green{color:var(--gl)}
+
+  .modal-backdrop{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(26,58,42,0.4);backdrop-filter:blur(4px);align-items:center;justify-content:center;z-index:100;animation:fadeIn .3s ease;overflow-y:auto;padding:20px}
+  .modal-backdrop.active{display:flex}
+  .modal-card{background:var(--white);border-radius:24px;padding:28px;max-width:90%;box-shadow:0 20px 60px rgba(26,58,42,0.3);animation:slideUp .4s ease;max-height:90vh;overflow-y:auto}
+  .modal-title{font-family:'Playfair Display',serif;font-size:22px;font-weight:700;color:var(--gd);margin-bottom:20px;text-align:center}
+
+  .toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:var(--gd);color:var(--white);padding:14px 24px;border-radius:20px;font-size:14px;font-weight:600;box-shadow:0 8px 24px rgba(26,58,42,0.3);animation:slideUp .3s ease,fadeOut .3s ease .3s forwards;z-index:1000}
+  @keyframes fadeOut{0%{opacity:1}100%{opacity:0;transform:translateX(-50%) translateY(20px)}}
+
+  .loading-spinner{display:inline-block;width:20px;height:20px;border:3px solid rgba(26,58,42,.2);border-top-color:var(--gd);border-radius:50%;animation:spin 1s linear infinite}
+  .config-notice{background:var(--ambp);border-left:4px solid var(--amb);padding:16px;border-radius:8px;margin:20px;color:var(--txt);font-size:14px;line-height:1.6}
+  .config-code{background:var(--white);padding:12px;border-radius:8px;font-family:'Courier New',monospace;font-size:12px;margin:10px 0;overflow-x:auto;color:var(--txt2)}
+
+  @media (max-width:480px){
+    .screen{max-width:100%}
+    .auth-logo{font-size:32px}
+    .bal-amount{font-size:36px}
+    .amount-big{font-size:42px}
+    .token-code{font-size:28px}
+  }
+</style>
+</head>
+<body>
+
+<!-- CONFIG REQUIRED SCREEN -->
+<div id="screen-config" class="screen active">
+  <div class="auth-wrap">
+    <div class="auth-logo">⚙️ Setup Required</div>
+    <div class="config-notice">
+      <strong>Step 1: Create Free Supabase Account</strong>
+      <p style="margin-top:10px">Go to <a href="https://supabase.com" target="_blank" style="color:var(--amb);font-weight:600">supabase.com</a> and sign up (takes 2 mins)</p>
+    </div>
+    <div class="config-notice">
+      <strong>Step 2: Copy Your Credentials</strong>
+      <p style="margin-top:10px">After signup, go to Project Settings → API → Copy:</p>
+      <div class="config-code" id="api-template">SUPABASE_URL=your-url.supabase.co
+SUPABASE_ANON_KEY=your-key-here</div>
+    </div>
+    <div class="config-notice">
+      <strong>Step 3: Paste Here</strong>
+    </div>
+    <div class="field-group">
+      <label class="field-label">Supabase URL</label>
+      <input id="config-url" class="field-input" placeholder="https://xxxxx.supabase.co">
+    </div>
+    <div class="field-group">
+      <label class="field-label">Anon Key</label>
+      <input id="config-key" class="field-input" placeholder="eyJhbGc...">
+    </div>
+    <button class="btn-main" onclick="saveConfig()">Connect & Setup Database</button>
+    <div class="err-msg" id="config-err"></div>
+  </div>
+</div>
+
+<!-- SIGNUP SCREEN -->
+<div id="screen-signup" class="screen">
+  <div class="auth-wrap">
+    <div class="auth-logo">Pamoja</div>
+    <div class="auth-sub">Real community lending. Shared ledger. Everyone sees the same transactions.</div>
+    <div class="auth-tabs">
+      <button class="auth-tab active" onclick="switchTab('login')">Log In</button>
+      <button class="auth-tab" onclick="switchTab('signup')">Sign Up</button>
+    </div>
+    
+    <!-- LOGIN -->
+    <div id="login-tab">
+      <div class="field-group">
+        <label class="field-label">Email</label>
+        <input id="login-email" class="field-input" placeholder="you@example.com" autocomplete="email">
+      </div>
+      <div class="field-group">
+        <label class="field-label">Password</label>
+        <input id="login-password" class="field-input" type="password" placeholder="••••••••">
+      </div>
+      <div class="err-msg" id="login-err"></div>
+      <button class="btn-main" onclick="doLogin()">Enter App</button>
+    </div>
+
+    <!-- SIGNUP -->
+    <div id="signup-tab" style="display:none">
+      <div class="field-group">
+        <label class="field-label">Name</label>
+        <input id="signup-name" class="field-input" placeholder="Your name">
+      </div>
+      <div class="field-group">
+        <label class="field-label">Email</label>
+        <input id="signup-email" class="field-input" placeholder="you@example.com" autocomplete="email">
+      </div>
+      <div class="field-group">
+        <label class="field-label">Password</label>
+        <input id="signup-password" class="field-input" type="password" placeholder="••••••••">
+      </div>
+      <div class="field-group">
+        <label class="field-label">Phone</label>
+        <input id="signup-phone" class="field-input" placeholder="+1 234 567 8900">
+      </div>
+      <div class="err-msg" id="signup-err"></div>
+      <button class="btn-main" onclick="doSignup()">Create Account</button>
+    </div>
+  </div>
+</div>
+
+<!-- HOME SCREEN -->
+<div id="screen-home" class="screen">
+  <div class="topbar">
+    <div class="topbar-title">Pamoja</div>
+    <button class="topbar-back" onclick="goTo('screen-profile')">⚙️</button>
+  </div>
+  <div class="balance-card">
+    <div class="bal-label">Your Balance</div>
+    <div class="bal-amount" id="home-balance">KES 0</div>
+    <div class="bal-sub" id="home-net">Loading...</div>
+    <div class="bal-chips">
+      <div class="bal-chip chip-owed">You're owed: KES <span id="home-owed">0</span></div>
+      <div class="bal-chip chip-owe">You owe: KES <span id="home-owe">0</span></div>
+    </div>
+  </div>
+  <div class="quick-row">
+    <button class="quick-btn" onclick="goTo('screen-pay')"><div class="q-icon qi-green">💳</div><div class="q-label">Send Payment</div></button>
+    <button class="quick-btn" onclick="goTo('screen-request')"><div class="q-icon qi-amber">📤</div><div class="q-label">Request</div></button>
+    <button class="quick-btn" onclick="goTo('screen-mytoken')"><div class="q-icon qi-blue">🔐</div><div class="q-label">My Token</div></button>
+  </div>
+  <div class="section-bar">
+    <div class="section-title">Recent Activity</div>
+  </div>
+  <div id="home-recent" class="person-list" style="flex:1;overflow-y:auto"></div>
+</div>
+
+<!-- PAY SCREEN -->
+<div id="screen-pay" class="screen">
+  <div class="topbar"><div class="topbar-title">Send Payment</div><button class="topbar-back" onclick="goTo('screen-home')">←</button></div>
+  <div class="pay-wrap">
+    <div class="token-box">
+      <div style="font-size:13px;color:var(--txt3);font-weight:600;margin-bottom:10px">Recipient's Email or ID</div>
+      <input id="pay-recipient" class="field-input" placeholder="recipient@example.com" onchange="resolveRecipient()">
+    </div>
+    <div class="resolved-person hidden" id="pay-person">
+      <div style="flex:1">
+        <div style="font-size:14px;font-weight:600;color:var(--txt)">Paying</div>
+        <div id="pay-person-name" style="font-size:13px;color:var(--txt2);margin-top:2px"></div>
+      </div>
+      <button style="background:transparent;color:var(--err);font-weight:600;font-size:13px;cursor:pointer" onclick="clearRecipient()">Clear</button>
+    </div>
+    <div class="amount-big-wrap">
+      <div class="currency-label">Amount (KES)</div>
+      <div class="amount-big" id="pay-amount">0</div>
+      <div class="amount-numpad" id="amount-numpad"></div>
+    </div>
+    <div>
+      <label class="field-label" style="padding:0 0 8px">Description (optional)</label>
+      <textarea id="pay-note" class="pay-note" placeholder="Lunch money, rent, etc." rows="2"></textarea>
+    </div>
+    <div class="err-msg" id="pay-err"></div>
+    <button class="btn-main" onclick="doPay()" id="pay-btn">Send Payment</button>
+  </div>
+</div>
+
+<!-- REQUEST SCREEN -->
+<div id="screen-request" class="screen">
+  <div class="topbar"><div class="topbar-title">Request Payment</div><button class="topbar-back" onclick="goTo('screen-home')">←</button></div>
+  <div style="padding:0 20px;flex:1;overflow-y:auto;display:flex;flex-direction:column">
+    <div style="padding:20px 0 10px;font-size:13px;color:var(--txt2);font-weight:600">Select who you're requesting from:</div>
+    <div id="request-list" class="person-list" style="padding:0;flex:1"></div>
+  </div>
+</div>
+
+<!-- MY TOKEN SCREEN -->
+<div id="screen-mytoken" class="screen">
+  <div class="topbar"><div class="topbar-title">Your ID</div><button class="topbar-back" onclick="goTo('screen-home')">←</button></div>
+  <div class="token-display-card">
+    <div class="token-lbl">Your Account Email</div>
+    <div class="token-code" id="token-display">loading...</div>
+    <div class="token-hint">Share this with others to receive payments.</div>
+    <button class="copy-btn" onclick="copyToken()">📋 Copy</button>
+  </div>
+  <div style="padding:20px;text-align:center;color:var(--txt3);font-size:13px">
+    <p>💡 Anyone with your email can send you a payment. It's your unique ID in Pamoja.</p>
+  </div>
+</div>
+
+<!-- HISTORY SCREEN -->
+<div id="screen-history" class="screen">
+  <div class="topbar"><div class="topbar-title">Activity</div><button class="topbar-back" onclick="goTo('screen-home')">←</button></div>
+  <div style="padding:0 16px;flex:1;overflow-y:auto">
+    <div id="history-list" style="padding:20px 0;border-top:1px solid var(--sand2)"></div>
+  </div>
+</div>
+
+<!-- PROFILE SCREEN -->
+<div id="screen-profile" class="screen">
+  <div class="topbar"><div class="topbar-title">Profile</div><button class="topbar-back" onclick="goTo('screen-home')">←</button></div>
+  <div style="padding:20px;flex:1;overflow-y:auto">
+    <div style="background:var(--white);border-radius:16px;padding:16px;margin-bottom:16px;box-shadow:var(--shadow-sm)">
+      <div style="font-size:12px;color:var(--txt3);font-weight:600;margin-bottom:8px">Account</div>
+      <div style="font-size:16px;font-weight:700;color:var(--txt)" id="profile-name">Loading...</div>
+      <div style="font-size:13px;color:var(--txt2);margin-top:4px" id="profile-email">...</div>
+      <div style="font-size:13px;color:var(--txt2)" id="profile-phone">...</div>
+    </div>
+    <div style="background:var(--white);border-radius:16px;padding:16px;margin-bottom:16px;box-shadow:var(--shadow-sm)">
+      <button style="width:100%;background:none;color:var(--err);font-weight:600;font-size:14px;padding:12px;cursor:pointer" onclick="doLogout()">🚪 Sign Out</button>
+    </div>
+  </div>
+</div>
+
+<!-- REQUEST MODAL -->
+<div id="modal-request" class="modal-backdrop" onclick="if(event.target===this)closeModal('modal-request')">
+  <div class="modal-card">
+    <div class="modal-title">Request Payment</div>
+    <div style="margin-bottom:20px">
+      <div style="font-size:14px;font-weight:600;color:var(--txt);margin-bottom:16px" id="req-from-name">From:</div>
+      <div class="field-group">
+        <label class="field-label">Amount (KES)</label>
+        <input id="req-amount" class="field-input" type="number" placeholder="500" min="1">
+      </div>
+      <div class="field-group">
+        <label class="field-label">Note (optional)</label>
+        <textarea id="req-note" class="pay-note" placeholder="Group lunch, games night..." rows="2"></textarea>
+      </div>
+      <div class="err-msg" id="req-err"></div>
+    </div>
+    <button class="btn-main" onclick="submitRequest()">Send Request</button>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════
+//  SUPABASE SETUP
+// ══════════════════════════
+let supabase = null;
+let currentUser = null;
+let payAmount = 0;
+let requestFromUser = null;
+
+function saveConfig() {
+  const url = document.getElementById('config-url').value.trim();
+  const key = document.getElementById('config-key').value.trim();
+  const err = document.getElementById('config-err');
+
+  if (!url || !key) {
+    err.textContent = 'Please enter both URL and Key';
+    return;
+  }
+
+  localStorage.setItem('supabase-url', url);
+  localStorage.setItem('supabase-key', key);
+  
+  initSupabase();
+}
+
+function initSupabase() {
+  const url = localStorage.getItem('supabase-url');
+  const key = localStorage.getItem('supabase-key');
+
+  if (!url || !key) {
+    document.getElementById('screen-config').classList.add('active');
+    return;
+  }
+
+  supabase = window.supabase.createClient(url, key);
+  setupDatabase().then(() => {
+    checkAuth();
+  });
+}
+
+async function setupDatabase() {
+  try {
+    // Create tables if they don't exist
+    await supabase.rpc('setup_tables').catch(() => {
+      // Table setup not needed if already exists
+    });
+  } catch (err) {
+    console.log('Tables already exist or setup done');
+  }
+}
+
+async function checkAuth() {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (session?.user) {
+    currentUser = session.user;
+    // Get user profile
+    const { data } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', currentUser.id)
+      .single();
+    
+    if (data) {
+      currentUser.display_name = data.display_name;
+      currentUser.phone = data.phone;
+    }
+
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById('screen-home').classList.add('active');
+    renderHomeScreen();
+  } else {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById('screen-signup').classList.add('active');
+  }
+}
+
+// ══════════════════════════
+//  AUTH
+// ══════════════════════════
+function switchTab(tab) {
+  const loginTab = document.getElementById('login-tab');
+  const signupTab = document.getElementById('signup-tab');
+  const tabs = document.querySelectorAll('.auth-tab');
+  
+  if (tab === 'login') {
+    loginTab.style.display = 'block';
+    signupTab.style.display = 'none';
+    tabs[0].classList.add('active');
+    tabs[1].classList.remove('active');
+  } else {
+    loginTab.style.display = 'none';
+    signupTab.style.display = 'block';
+    tabs[0].classList.remove('active');
+    tabs[1].classList.add('active');
+  }
+}
+
+async function doLogin() {
+  const email = document.getElementById('login-email').value.trim();
+  const password = document.getElementById('login-password').value;
+  const err = document.getElementById('login-err');
+  err.textContent = '';
+
+  if (!email || !password) {
+    err.textContent = 'Email and password required';
+    return;
+  }
+
+  const btn = event.target;
+  btn.classList.add('loading');
+  btn.disabled = true;
+
+  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  if (error) {
+    err.textContent = error.message;
+  } else {
+    await checkAuth();
+    toast('Welcome back!');
+  }
+
+  btn.classList.remove('loading');
+  btn.disabled = false;
+}
+
+async function doSignup() {
+  const name = document.getElementById('signup-name').value.trim();
+  const email = document.getElementById('signup-email').value.trim();
+  const password = document.getElementById('signup-password').value;
+  const phone = document.getElementById('signup-phone').value.trim();
+  const err = document.getElementById('signup-err');
+  err.textContent = '';
+
+  if (!name || !email || !password || !phone) {
+    err.textContent = 'All fields required';
+    return;
+  }
+
+  if (password.length < 6) {
+    err.textContent = 'Password must be 6+ characters';
+    return;
+  }
+
+  const btn = event.target;
+  btn.classList.add('loading');
+  btn.disabled = true;
+
+  const { data, error } = await supabase.auth.signUp({ email, password });
+  
+  if (error) {
+    err.textContent = error.message;
+  } else if (data.user) {
+    // Create profile
+    const { error: profileError } = await supabase
+      .from('profiles')
+      .insert([{
+        id: data.user.id,
+        display_name: name,
+        phone: phone,
+        email: email
+      }]);
+
+    if (profileError) {
+      err.textContent = profileError.message;
+    } else {
+      toast('Account created! Logging in...');
+      await doLogin();
+    }
+  }
+
+  btn.classList.remove('loading');
+  btn.disabled = false;
+}
+
+async function doLogout() {
+  if (!confirm('Sign out?')) return;
+  await supabase.auth.signOut();
+  currentUser = null;
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-signup').classList.add('active');
+  document.getElementById('login-email').value = '';
+  document.getElementById('login-password').value = '';
+  switchTab('login');
+}
+
+// ══════════════════════════
+//  NAVIGATION
+// ══════════════════════════
+function goTo(screenId) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(screenId).classList.add('active');
+
+  if (screenId === 'screen-home') renderHomeScreen();
+  else if (screenId === 'screen-pay') {
+    payAmount = 0;
+    updateAmount();
+    document.getElementById('pay-recipient').value = '';
+    document.getElementById('pay-note').value = '';
+    clearRecipient();
+  }
+  else if (screenId === 'screen-request') renderRequestScreen();
+  else if (screenId === 'screen-profile') renderProfileScreen();
+}
+
+// ══════════════════════════
+//  HOME SCREEN
+// ══════════════════════════
+async function renderHomeScreen() {
+  // Get balance
+  const { data: txs } = await supabase
+    .from('transactions')
+    .select('*')
+    .or(`from_user.eq.${currentUser.id},to_user.eq.${currentUser.id}`);
+
+  let owed = 0, owe = 0;
+  (txs || []).forEach(tx => {
+    if (tx.to_user === currentUser.id) owed += tx.amount;
+    if (tx.from_user === currentUser.id) owe += tx.amount;
+  });
+
+  const balance = owed - owe;
+  document.getElementById('home-balance').textContent = 'KES ' + balance.toLocaleString();
+  document.getElementById('home-net').textContent = balance > 0 ? 'You\'re owed' : balance < 0 ? 'You owe' : 'Settled up';
+  document.getElementById('home-owed').textContent = owed.toLocaleString();
+  document.getElementById('home-owe').textContent = owe.toLocaleString();
+
+  // Get recent transactions
+  const { data: recent } = await supabase
+    .from('transactions')
+    .select(`*,
+      from_user_profile:from_user(display_name, phone),
+      to_user_profile:to_user(display_name, phone)
+    `)
+    .or(`from_user.eq.${currentUser.id},to_user.eq.${currentUser.id}`)
+    .order('created_at', { ascending: false })
+    .limit(5);
+
+  if (!recent || recent.length === 0) {
+    document.getElementById('home-recent').innerHTML = '<div class="empty-state"><div class="empty-icon">💬</div>No transactions yet. Send or request a payment!</div>';
+    return;
+  }
+
+  document.getElementById('home-recent').innerHTML = (recent || []).map(tx => {
+    const isFrom = tx.from_user === currentUser.id;
+    const other = isFrom ? tx.to_user_profile : tx.from_user_profile;
+    return `
+      <div class="tx-item">
+        <div class="tx-icon" style="background:${isFrom?'#FFF4E0':'var(--gp)'};color:${isFrom?'var(--amb)':'var(--gl)'}">💳</div>
+        <div class="tx-body">
+          <div class="tx-name">${isFrom?'Paid '+other.display_name:other.display_name+' paid you'}</div>
+          <div class="tx-note">${tx.description||'—'}</div>
+        </div>
+        <div class="tx-right">
+          <div class="tx-amount ${isFrom?'color-red':'color-green'}">${isFrom?'-':'+'}  KES ${tx.amount.toLocaleString()}</div>
+          <div class="tx-date">${new Date(tx.created_at).toLocaleDateString()}</div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+// ══════════════════════════
+//  PAY SCREEN
+// ══════════════════════════
+function buildAmountNumpad() {
+  const container = document.getElementById('amount-numpad');
+  container.innerHTML = '';
+  for (let i = 1; i <= 9; i++) {
+    const btn = document.createElement('button');
+    btn.className = 'an-btn';
+    btn.textContent = i;
+    btn.onclick = () => addAmount(i);
+    container.appendChild(btn);
+  }
+  container.appendChild(Object.assign(document.createElement('button'), {
+    className: 'an-btn',
+    innerHTML: '&nbsp;',
+    style: 'border:none;box-shadow:none',
+    onclick: () => {}
+  }));
+  const delBtn = document.createElement('button');
+  delBtn.className = 'an-btn del';
+  delBtn.textContent = '⌫';
+  delBtn.onclick = () => removeAmount();
+  container.appendChild(delBtn);
+}
+
+function addAmount(num) {
+  payAmount = (payAmount * 10 + num);
+  if (payAmount > 9999999) payAmount = 9999999;
+  updateAmount();
+}
+
+function removeAmount() {
+  payAmount = Math.floor(payAmount / 10);
+  updateAmount();
+}
+
+function updateAmount() {
+  document.getElementById('pay-amount').textContent = payAmount.toLocaleString();
+}
+
+async function resolveRecipient() {
+  const recipient = document.getElementById('pay-recipient').value.trim();
+  const personEl = document.getElementById('pay-person');
+  
+  if (!recipient) {
+    clearRecipient();
+    return;
+  }
+
+  const { data } = await supabase
+    .from('profiles')
+    .select('*')
+    .or(`email.eq.${recipient},display_name.ilike.${recipient}`)
+    .limit(1);
+
+  if (data && data.length > 0 && data[0].id !== currentUser.id) {
+    document.getElementById('pay-person-name').textContent = data[0].display_name;
+    personEl.classList.remove('hidden');
+  } else {
+    clearRecipient();
+  }
+}
+
+function clearRecipient() {
+  document.getElementById('pay-person').classList.add('hidden');
+  document.getElementById('pay-recipient').value = '';
+}
+
+async function doPay() {
+  const recipient = document.getElementById('pay-recipient').value.trim();
+  const note = document.getElementById('pay-note').value.trim();
+  const err = document.getElementById('pay-err');
+  err.textContent = '';
+
+  if (!recipient) { err.textContent = 'Enter recipient email'; return; }
+  if (payAmount <= 0) { err.textContent = 'Enter amount'; return; }
+
+  const { data } = await supabase
+    .from('profiles')
+    .select('id')
+    .or(`email.eq.${recipient},display_name.ilike.${recipient}`)
+    .limit(1);
+
+  if (!data || data.length === 0) { err.textContent = 'User not found'; return; }
+  if (data[0].id === currentUser.id) { err.textContent = 'Cannot pay yourself'; return; }
+
+  const btn = event.target;
+  btn.classList.add('loading');
+  btn.disabled = true;
+
+  const { error } = await supabase
+    .from('transactions')
+    .insert([{
+      from_user: currentUser.id,
+      to_user: data[0].id,
+      amount: payAmount,
+      description: note
+    }]);
+
+  if (error) {
+    err.textContent = error.message;
+  } else {
+    toast('Payment sent!');
+    payAmount = 0;
+    updateAmount();
+    document.getElementById('pay-note').value = '';
+    clearRecipient();
+    renderHomeScreen();
+    goTo('screen-home');
+  }
+
+  btn.classList.remove('loading');
+  btn.disabled = false;
+}
+
+// ══════════════════════════
+//  REQUEST SCREEN
+// ══════════════════════════
+async function renderRequestScreen() {
+  const { data } = await supabase
+    .from('profiles')
+    .select('*')
+    .neq('id', currentUser.id)
+    .limit(50);
+
+  if (!data || data.length === 0) {
+    document.getElementById('request-list').innerHTML = '<div class="empty-state">No other users yet</div>';
+    return;
+  }
+
+  document.getElementById('request-list').innerHTML = (data || []).map(user => `
+    <div class="person-card" onclick="openRequestModal('${user.id}', '${user.display_name}')">
+      <div class="p-avatar" style="background:${avatarBg(user.id)};color:white;font-weight:700">${initials(user.display_name)}</div>
+      <div class="p-info">
+        <div class="p-name">${user.display_name}</div>
+        <div class="p-sub">${user.email}</div>
+      </div>
+      <div style="font-size:18px">→</div>
+    </div>
+  `).join('');
+}
+
+function openRequestModal(userId, userName) {
+  requestFromUser = userId;
+  document.getElementById('req-from-name').textContent = `Requesting from ${userName}`;
+  document.getElementById('req-amount').value = '';
+  document.getElementById('req-note').value = '';
+  document.getElementById('req-err').textContent = '';
+  openModal('modal-request');
+}
+
+async function submitRequest() {
+  const amount = parseFloat(document.getElementById('req-amount').value);
+  const note = document.getElementById('req-note').value.trim();
+  const err = document.getElementById('req-err');
+
+  if (!amount || amount <= 0) { err.textContent = 'Enter valid amount'; return; }
+
+  const btn = event.target;
+  btn.classList.add('loading');
+  btn.disabled = true;
+
+  const { error } = await supabase
+    .from('transactions')
+    .insert([{
+      from_user: requestFromUser,
+      to_user: currentUser.id,
+      amount: amount,
+      description: note,
+      is_request: true
+    }]);
+
+  if (error) {
+    err.textContent = error.message;
+  } else {
+    toast('Request sent!');
+    closeModal('modal-request');
+    renderRequestScreen();
+    goTo('screen-home');
+  }
+
+  btn.classList.remove('loading');
+  btn.disabled = false;
+}
+
+// ══════════════════════════
+//  PROFILE
+// ══════════════════════════
+function renderProfileScreen() {
+  document.getElementById('profile-name').textContent = currentUser.display_name;
+  document.getElementById('profile-email').textContent = currentUser.email;
+  document.getElementById('profile-phone').textContent = currentUser.phone;
+}
+
+// ══════════════════════════
+//  MY TOKEN
+// ══════════════════════════
+function copyToken() {
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(currentUser.email).then(() => toast('Email copied!')).catch(() => toast(currentUser.email));
+  } else {
+    toast(currentUser.email);
+  }
+}
+
+// On screen load
+document.getElementById('screen-mytoken').addEventListener('click', function() {
+  if (!this.classList.contains('active')) return;
+  document.getElementById('token-display').textContent = currentUser.email;
+}, true);
+
+// ══════════════════════════
+//  UTILS
+// ══════════════════════════
+function avatarBg(id) {
+  const colors = ['#4A8C63', '#D4821A', '#185FA5', '#6B4C9A', '#C1554A'];
+  return colors[id.charCodeAt(0) % colors.length];
+}
+
+function initials(name) {
+  return name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+}
+
+function openModal(id) {
+  document.getElementById(id).classList.add('active');
+}
+
+function closeModal(id) {
+  document.getElementById(id).classList.remove('active');
+}
+
+function toast(msg) {
+  const el = document.createElement('div');
+  el.className = 'toast';
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 2000);
+}
+
+// ══════════════════════════
+//  INIT
+// ══════════════════════════
+buildAmountNumpad();
+
+// Close modals on backdrop click
+document.querySelectorAll('.modal-backdrop').forEach(bd => {
+  bd.addEventListener('click', e => {
+    if (e.target === bd) bd.classList.remove('active');
+  });
+});
+
+// Check Supabase config and init
+initSupabase();
+
+// Real-time updates
+if (supabase) {
+  supabase
+    .channel('transactions')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'transactions' }, () => {
+      if (document.getElementById('screen-home').classList.contains('active')) {
+        renderHomeScreen();
+      }
+    })
+    .subscribe();
+}
+</script>
+</body>
+</html>
