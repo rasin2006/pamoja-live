@@ -3,366 +3,418 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pamoja — Community Loans</title>
+<title>Pamoja</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-  :root{
-    --gd:#1A3A2A;--gm:#2D5A3D;--gl:#4A8C63;--gp:#E8F5EE;
-    --sand:#F5EDD6;--sand2:#E8D9B8;--sand3:#DDD0B0;
-    --amb:#D4821A;--ambl:#F5A940;--ambp:#FFF4E0;
-    --white:#FFFFFF;--err:#B91C1C;--errp:#FEF2F2;
-    --txt:#1A3A2A;--txt2:#4A6A5A;--txt3:#8AA898;
-    --shadow: 0 10px 30px rgba(26,58,42,0.1);
-    --shadow-sm: 0 4px 12px rgba(26,58,42,0.08);
-  }
-  html,body{height:100%;background:linear-gradient(135deg, var(--sand) 0%, #f9f3eb 100%);font-family:'Inter',sans-serif;color:var(--txt);font-size:15px}
-  button{font-family:'Inter',sans-serif;cursor:pointer;border:none;outline:none}
-  input,textarea{font-family:'Inter',sans-serif;outline:none}
-  input::placeholder,textarea::placeholder{color:var(--txt3)}
-
-  .screen{display:none;flex-direction:column;min-height:100vh;max-width:420px;margin:0 auto;animation:fadeIn .4s ease}
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;font-family:'Inter',sans-serif;background:linear-gradient(135deg, #667eea 0%, #764ba2 100%);overflow:hidden}
+  
+  .screen{display:none;position:fixed;top:0;left:0;right:0;bottom:0;flex-direction:column;align-items:center;justify-content:center;z-index:1;animation:fadeIn .5s ease}
   .screen.active{display:flex}
-  @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
   @keyframes spin{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}
 
-  .auth-wrap{flex:1;display:flex;flex-direction:column;justify-content:center;padding:32px 24px 48px}
-  .auth-logo{font-family:'Playfair Display',serif;font-size:36px;font-weight:700;color:var(--gd);text-align:center;margin-bottom:8px;background:linear-gradient(135deg, var(--gd), var(--gl));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-  .auth-sub{text-align:center;font-size:14px;color:var(--txt2);margin-bottom:40px;line-height:1.5}
-  .auth-tabs{display:flex;background:var(--white);border-radius:14px;padding:4px;margin-bottom:32px;gap:4px;box-shadow:var(--shadow-sm)}
-  .auth-tab{flex:1;padding:11px;border-radius:11px;font-size:14px;font-weight:500;background:none;border:none;color:var(--txt2);transition:all .2s;cursor:pointer}
-  .auth-tab.active{background:linear-gradient(135deg, var(--gd), var(--gm));color:var(--white);box-shadow:0 4px 12px rgba(74,140,99,0.2)}
+  /* GLASSMORPHISM */
+  .glass{background:rgba(255,255,255,0.1);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.2);border-radius:24px;box-shadow:0 8px 32px rgba(0,0,0,0.1)}
+  .glass-sm{background:rgba(255,255,255,0.08);backdrop-filter:blur(15px);border:1px solid rgba(255,255,255,0.15);border-radius:16px}
   
-  .field-group{margin-bottom:18px}
-  .field-label{font-size:13px;font-weight:600;color:var(--txt);margin-bottom:8px;display:block}
-  .field-input{width:100%;padding:14px 16px;border:1.5px solid var(--sand2);border-radius:12px;font-size:15px;color:var(--txt);background:var(--white);transition:all .2s}
-  .field-input:focus{border-color:var(--gl);box-shadow:0 0 0 3px rgba(74,140,99,0.1)}
+  /* AUTH SCREEN */
+  .auth-container{width:90%;max-width:400px;padding:40px 30px}
+  .auth-logo{font-family:'Playfair Display',serif;font-size:48px;font-weight:700;text-align:center;margin-bottom:10px;background:linear-gradient(135deg, #667eea 0%, #764ba2 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+  .auth-sub{text-align:center;font-size:14px;color:rgba(255,255,255,0.7);margin-bottom:40px}
+
+  .auth-tabs{display:flex;background:rgba(255,255,255,0.08);border-radius:16px;padding:6px;gap:6px;margin-bottom:30px}
+  .tab-btn{flex:1;padding:12px;border:none;background:none;color:rgba(255,255,255,0.6);font-weight:600;border-radius:12px;cursor:pointer;transition:all .3s;font-size:14px}
+  .tab-btn.active{background:rgba(255,255,255,0.2);color:white;box-shadow:0 4px 15px rgba(0,0,0,0.1)}
+
+  .field-group{margin-bottom:16px}
+  .field-label{font-size:12px;color:rgba(255,255,255,0.8);font-weight:600;margin-bottom:8px;display:block;text-transform:uppercase;letter-spacing:.08em}
+  .field-input{width:100%;padding:14px 16px;background:rgba(255,255,255,0.1);border:1.5px solid rgba(255,255,255,0.2);border-radius:12px;color:white;font-size:14px;transition:all .3s;font-family:'Inter',sans-serif}
+  .field-input::placeholder{color:rgba(255,255,255,0.5)}
+  .field-input:focus{background:rgba(255,255,255,0.15);border-color:rgba(255,255,255,0.4);box-shadow:0 0 0 3px rgba(102,126,234,0.2)}
   
-  .btn-main{width:100%;padding:16px;border-radius:14px;background:linear-gradient(135deg, var(--gd), var(--gm));color:var(--white);font-size:16px;font-weight:600;margin-top:24px;transition:all .2s;box-shadow:0 6px 20px rgba(74,140,99,0.2)}
-  .btn-main:active{transform:scale(.98)}
-  .btn-main:disabled{opacity:.4;cursor:not-allowed}
-  .btn-main.loading{animation:spin 1s linear infinite}
-  .err-msg{font-size:13px;color:var(--err);text-align:center;margin-top:10px;min-height:20px}
-  .success-msg{font-size:13px;color:var(--gl);text-align:center;margin-top:10px}
+  .avatar-section{display:flex;flex-direction:column;align-items:center;margin-bottom:24px}
+  .avatar-upload{width:80px;height:80px;border-radius:20px;background:rgba(255,255,255,0.15);border:2px dashed rgba(255,255,255,0.4);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:32px;transition:all .3s;margin-bottom:12px}
+  .avatar-upload:hover{background:rgba(255,255,255,0.2);border-color:rgba(255,255,255,0.6)}
+  .avatar-upload img{width:100%;height:100%;object-fit:cover;border-radius:18px}
+  .avatar-hint{font-size:12px;color:rgba(255,255,255,0.6);text-align:center}
 
-  .topbar{display:flex;align-items:center;justify-content:space-between;padding:60px 20px 20px}
-  .topbar-title{font-family:'Playfair Display',serif;font-size:24px;font-weight:700;color:var(--gd)}
-  .topbar-back{width:40px;height:40px;border-radius:50%;background:var(--white);display:flex;align-items:center;justify-content:center;font-size:20px;color:var(--gd);transition:all .2s;box-shadow:var(--shadow-sm);cursor:pointer}
-  .topbar-back:active{background:var(--gp);transform:scale(.95)}
+  .pin-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:16px 0;margin-bottom:20px}
+  .pin-dot{width:100%;aspect-ratio:1;border-radius:12px;background:rgba(255,255,255,0.15);border:2px solid rgba(255,255,255,0.3);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:20px;color:rgba(255,255,255,0.7);transition:all .2s}
+  .pin-dot.filled{background:rgba(102,126,234,0.4);border-color:rgba(102,126,234,0.8);color:white}
 
-  .balance-card{margin:16px 16px 24px;background:linear-gradient(135deg, #1A3A2A 0%, #2D5A3D 100%);border-radius:20px;padding:28px 24px;box-shadow:0 12px 32px rgba(26,58,42,0.25)}
-  .bal-label{font-size:12px;color:rgba(255,255,255,.65);font-weight:600;margin-bottom:6px}
-  .bal-amount{font-family:'Playfair Display',serif;font-size:42px;font-weight:700;color:var(--white);line-height:1.1}
-  .bal-sub{font-size:13px;color:rgba(255,255,255,.6);margin-top:6px}
-  .bal-chips{display:flex;gap:10px;margin-top:18px;flex-wrap:wrap}
-  .bal-chip{padding:7px 16px;border-radius:20px;font-size:13px;font-weight:600}
-  .chip-owe{background:rgba(213,130,26,.2);color:#FAC775}
-  .chip-owed{background:rgba(255,255,255,.15);color:#9FE1CB}
+  .numpad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:20px}
+  .numpad-btn{padding:16px;border-radius:12px;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.2);color:white;font-size:18px;font-weight:600;cursor:pointer;transition:all .2s;font-family:'Inter',sans-serif}
+  .numpad-btn:active{background:rgba(255,255,255,0.25);transform:scale(.95)}
+  .numpad-btn.del{font-size:16px}
+  .numpad-btn.empty{background:transparent;border:none;cursor:default}
 
-  .quick-row{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;padding:0 16px 24px}
-  .quick-btn{display:flex;flex-direction:column;align-items:center;gap:10px;background:var(--white);border-radius:18px;padding:18px 10px;cursor:pointer;transition:all .2s;box-shadow:var(--shadow-sm)}
-  .quick-btn:active{transform:scale(.96)}
-  .q-icon{width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px}
-  .qi-green{background:linear-gradient(135deg, var(--gp), #d4ede5);color:var(--gd)}
-  .qi-amber{background:linear-gradient(135deg, var(--ambp), #ffd699);color:var(--amb)}
-  .qi-blue{background:linear-gradient(135deg, #E8F0FF, #cfe0ff);color:#185FA5}
-  .q-label{font-size:12px;font-weight:600;color:var(--txt);text-align:center}
+  .btn-main{width:100%;padding:14px;border-radius:12px;background:linear-gradient(135deg, #667eea 0%, #764ba2 100%);color:white;font-weight:600;border:none;cursor:pointer;transition:all .3s;font-size:15px;margin-top:16px}
+  .btn-main:active{transform:scale(.98);box-shadow:0 6px 20px rgba(0,0,0,0.2)}
+  .btn-main:disabled{opacity:.5;cursor:not-allowed}
+  .err-msg{color:#ff6b6b;font-size:13px;text-align:center;margin-top:12px;min-height:18px}
+  .success-msg{color:#51cf66;font-size:13px;text-align:center;margin-top:12px}
 
-  .section-title{font-size:14px;font-weight:600;color:var(--txt);padding:0 20px;margin-bottom:14px}
-  .person-list{padding:0 16px 20px}
-  .person-card{background:var(--white);border-radius:16px;padding:16px;margin-bottom:10px;display:flex;align-items:center;gap:14px;cursor:pointer;box-shadow:var(--shadow-sm)}
-  .p-avatar{width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:16px;color:white}
-  .p-info{flex:1}
-  .p-name{font-size:15px;font-weight:600;color:var(--txt)}
-  .p-sub{font-size:12px;color:var(--txt3);margin-top:3px}
-  .p-amount{font-size:16px;font-weight:700;text-align:right}
-  .empty-state{text-align:center;padding:60px 20px;color:var(--txt3)}
+  /* HOME SCREEN */
+  .home-container{width:100%;height:100%;display:flex;flex-direction:column;overflow-y:auto;padding-bottom:100px}
+  .header{padding:40px 20px 0;text-align:center}
+  .header-title{font-family:'Playfair Display',serif;font-size:28px;font-weight:700;color:white;margin-bottom:30px}
+  
+  .balance-glass{margin:0 20px 24px;padding:24px;color:white}
+  .balance-label{font-size:12px;color:rgba(255,255,255,0.7);font-weight:600;text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px}
+  .balance-amount{font-family:'Playfair Display',serif;font-size:40px;font-weight:700;margin-bottom:8px}
+  .balance-sub{font-size:13px;color:rgba(255,255,255,0.8);margin-bottom:16px}
+  .balance-chips{display:flex;gap:12px;flex-wrap:wrap}
+  .chip{padding:7px 14px;border-radius:10px;font-size:12px;font-weight:600;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:rgba(255,255,255,0.9)}
 
-  .pay-wrap{flex:1;padding:0 20px 40px;overflow-y:auto}
-  .amount-big{font-family:'Playfair Display',serif;font-size:48px;font-weight:700;color:var(--gd);text-align:center;padding:24px 0}
-  .amount-numpad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-  .an-btn{padding:14px;border-radius:12px;background:var(--white);border:1.5px solid var(--sand2);font-size:18px;font-weight:600;color:var(--gd);cursor:pointer;box-shadow:var(--shadow-sm)}
-  .an-btn:active{background:var(--gp);transform:scale(.94)}
-  .pay-note{width:100%;padding:14px 16px;border:1.5px solid var(--sand2);border-radius:12px;font-size:14px;color:var(--txt);background:var(--white);resize:none;margin:18px 0;box-shadow:var(--shadow-sm)}
+  .quick-buttons{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;padding:0 20px 24px;margin-bottom:20px}
+  .quick-btn{padding:20px 12px;cursor:pointer;text-align:center;display:flex;flex-direction:column;align-items:center;gap:10px}
+  .quick-icon{font-size:28px}
+  .quick-label{font-size:12px;font-weight:600;color:rgba(255,255,255,0.9)}
 
-  .token-code{font-family:'Courier New',monospace;font-size:36px;font-weight:700;color:var(--white);letter-spacing:.2em;margin:16px 0;word-break:break-all}
-  .copy-btn{display:inline-flex;align-items:center;gap:7px;margin-top:18px;padding:11px 22px;border-radius:20px;background:rgba(255,255,255,.15);color:rgba(255,255,255,.95);font-size:14px;font-weight:600;border:1px solid rgba(255,255,255,.2);cursor:pointer}
-
-  .tx-item{display:flex;gap:12px;padding:14px 0;border-bottom:1px solid var(--sand2);align-items:center}
-  .tx-icon{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+  .section-title{padding:0 20px;font-size:13px;font-weight:600;color:rgba(255,255,255,0.7);text-transform:uppercase;letter-spacing:.1em;margin-bottom:12px;margin-top:20px}
+  .tx-list{padding:0 20px}
+  .tx-item{padding:16px;margin-bottom:12px;cursor:pointer;display:flex;align-items:center;gap:12px}
+  .tx-avatar{width:44px;height:44px;border-radius:12px;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;color:white;flex-shrink:0}
   .tx-body{flex:1}
-  .tx-name{font-size:14px;font-weight:600}
-  .tx-note{font-size:12px;color:var(--txt3);margin-top:2px}
-  .tx-amount{font-size:15px;font-weight:700;text-align:right}
+  .tx-name{font-size:14px;font-weight:600;color:white}
+  .tx-note{font-size:12px;color:rgba(255,255,255,0.6);margin-top:2px}
+  .tx-amount{font-size:15px;font-weight:700;color:white;text-align:right}
+  .empty-state{text-align:center;padding:40px 20px;color:rgba(255,255,255,0.6);font-size:14px}
 
-  .modal-backdrop{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(26,58,42,0.4);backdrop-filter:blur(4px);align-items:center;justify-content:center;z-index:100;padding:20px}
-  .modal-backdrop.active{display:flex}
-  .modal-card{background:var(--white);border-radius:24px;padding:28px;max-width:90%;box-shadow:0 20px 60px rgba(26,58,42,0.3);max-height:90vh;overflow-y:auto}
-  .modal-title{font-family:'Playfair Display',serif;font-size:22px;font-weight:700;color:var(--gd);margin-bottom:20px;text-align:center}
+  .topbar{display:flex;align-items:center;justify-content:space-between;padding:40px 20px 20px}
+  .topbar-title{font-family:'Playfair Display',serif;font-size:24px;font-weight:700;color:white}
+  .topbar-back{width:40px;height:40px;border-radius:12px;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:20px;color:white;cursor:pointer;transition:all .2s}
+  .topbar-back:active{background:rgba(255,255,255,0.25)}
 
-  .toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:var(--gd);color:var(--white);padding:14px 24px;border-radius:20px;font-size:14px;font-weight:600;box-shadow:0 8px 24px rgba(26,58,42,0.3);z-index:1000}
+  .pay-container{width:100%;max-width:420px;margin:0 auto;padding:20px}
+  .input-section{margin-bottom:24px}
+  .amount-display{font-family:'Playfair Display',serif;font-size:48px;font-weight:700;color:white;text-align:center;padding:24px;margin:16px 0}
 
-  .config-notice{background:var(--ambp);border-left:4px solid var(--amb);padding:16px;border-radius:8px;margin:20px;color:var(--txt);font-size:14px;line-height:1.6}
-  .config-code{background:var(--white);padding:12px;border-radius:8px;font-family:'Courier New',monospace;font-size:12px;margin:10px 0;overflow-x:auto;color:var(--txt2)}
+  .profile-section{padding:20px}
+  .profile-card{padding:20px;color:white}
+  .profile-name{font-size:20px;font-weight:700;margin-bottom:12px}
+  .profile-info{font-size:13px;color:rgba(255,255,255,0.8);line-height:1.8}
+
+  .modal{display:none;position:fixed;top:0;left:0;right:0;bottom:0;align-items:center;justify-content:center;z-index:100;animation:fadeIn .3s ease}
+  .modal.active{display:flex}
+  .modal-card{width:90%;max-width:380px;padding:30px;color:white}
+  .modal-title{font-family:'Playfair Display',serif;font-size:24px;font-weight:700;margin-bottom:20px;text-align:center}
+  .modal-content{margin-bottom:20px}
+
+  .toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:rgba(255,255,255,0.15);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,0.2);padding:12px 24px;border-radius:10px;color:white;font-size:14px;font-weight:600;z-index:1000;animation:fadeIn .3s ease}
+
+  .logout-btn{width:100%;padding:14px;background:rgba(255,106,106,0.3);border:1px solid rgba(255,106,106,0.5);color:#ff6b6b;border-radius:12px;font-weight:600;cursor:pointer;transition:all .2s;font-family:'Inter',sans-serif;margin-top:20px}
+  .logout-btn:active{background:rgba(255,106,106,0.4)}
 
   @media (max-width:480px){
-    .screen{max-width:100%}
-    .auth-logo{font-size:32px}
-    .bal-amount{font-size:36px}
+    .auth-container{width:95%}
+    .balance-amount{font-size:36px}
+    .amount-display{font-size:40px}
   }
 </style>
 </head>
 <body>
 
-<!-- CONFIG SCREEN -->
-<div id="screen-config" class="screen active">
-  <div class="auth-wrap">
-    <div class="auth-logo">⚙️ Setup</div>
-    <div class="config-notice">
-      <strong>Step 1: Supabase Account</strong>
-      <p style="margin-top:10px">Go to <a href="https://supabase.com" target="_blank" style="color:var(--amb);font-weight:600">supabase.com</a> and sign up</p>
-    </div>
-    <div class="config-notice">
-      <strong>Step 2: Run SQL in Supabase</strong>
-      <p style="margin-top:10px">SQL Editor → New Query → Paste code from SUPABASE_SETUP.md → Run</p>
-    </div>
-    <div class="config-notice">
-      <strong>Step 3: Copy Your Credentials</strong>
-      <p style="margin-top:10px">Project Settings → API → Copy URL and anon key</p>
+<!-- SETUP SCREEN -->
+<div id="screen-setup" class="screen active">
+  <div class="auth-container glass">
+    <div class="auth-logo">⚙️</div>
+    <div class="auth-sub">Enter Supabase credentials to begin</div>
+    
+    <div class="field-group">
+      <label class="field-label">Supabase URL</label>
+      <input id="setup-url" class="field-input" placeholder="https://xxxxx.supabase.co">
     </div>
     <div class="field-group">
-      <label class="field-label">Supabase Project URL</label>
-      <input id="config-url" class="field-input" placeholder="https://xxxxx.supabase.co">
+      <label class="field-label">Anon Key</label>
+      <input id="setup-key" class="field-input" placeholder="eyJhbGc...">
     </div>
-    <div class="field-group">
-      <label class="field-label">Anon Public Key</label>
-      <input id="config-key" class="field-input" placeholder="eyJhbGc...">
-    </div>
-    <button class="btn-main" onclick="window.saveConfig()">Connect & Setup</button>
-    <div class="err-msg" id="config-err"></div>
-    <div class="success-msg" id="config-success"></div>
+    <button class="btn-main" onclick="window.setupSupabase()">Connect</button>
+    <div class="err-msg" id="setup-err"></div>
   </div>
 </div>
 
-<!-- SIGNUP SCREEN -->
-<div id="screen-signup" class="screen">
-  <div class="auth-wrap">
+<!-- AUTH SCREEN -->
+<div id="screen-auth" class="screen">
+  <div class="auth-container glass">
     <div class="auth-logo">Pamoja</div>
-    <div class="auth-sub">Real community ledger. Everyone sees the same transactions.</div>
-    <div class="auth-tabs">
-      <button class="auth-tab active" onclick="window.switchTab('login')">Log In</button>
-      <button class="auth-tab" onclick="window.switchTab('signup')">Sign Up</button>
-    </div>
+    <div class="auth-sub">Community ledger. Everyone, one truth.</div>
     
-    <div id="login-tab">
-      <div class="field-group">
-        <label class="field-label">Email</label>
-        <input id="login-email" class="field-input" placeholder="you@example.com">
-      </div>
-      <div class="field-group">
-        <label class="field-label">Password</label>
-        <input id="login-password" class="field-input" type="password" placeholder="••••••••">
-      </div>
-      <div class="err-msg" id="login-err"></div>
-      <button class="btn-main" onclick="window.doLogin()">Enter App</button>
+    <div class="auth-tabs">
+      <button class="tab-btn active" onclick="window.switchTab('login')">Login</button>
+      <button class="tab-btn" onclick="window.switchTab('signup')">Join</button>
     </div>
 
+    <!-- LOGIN TAB -->
+    <div id="login-tab">
+      <div class="field-group">
+        <label class="field-label">Username</label>
+        <input id="login-username" class="field-input" placeholder="your username">
+      </div>
+      <button class="btn-main" onclick="window.startLogin()">Next</button>
+      <div class="err-msg" id="login-err"></div>
+    </div>
+
+    <!-- SIGNUP TAB -->
     <div id="signup-tab" style="display:none">
-      <div class="field-group">
-        <label class="field-label">Name</label>
-        <input id="signup-name" class="field-input" placeholder="Your name">
+      <div class="avatar-section">
+        <div class="avatar-upload" onclick="document.getElementById('avatar-input').click()">
+          <span id="avatar-display">📷</span>
+        </div>
+        <input type="file" id="avatar-input" accept="image/*" style="display:none" onchange="window.loadAvatar(event)">
+        <div class="avatar-hint">Tap to add photo (optional)</div>
       </div>
+
       <div class="field-group">
-        <label class="field-label">Email</label>
-        <input id="signup-email" class="field-input" placeholder="you@example.com">
+        <label class="field-label">Username (or skip for random)</label>
+        <input id="signup-username" class="field-input" placeholder="alice">
       </div>
+
       <div class="field-group">
-        <label class="field-label">Password</label>
-        <input id="signup-password" class="field-input" type="password" placeholder="••••••••">
-      </div>
-      <div class="field-group">
-        <label class="field-label">Phone</label>
+        <label class="field-label">Phone (optional)</label>
         <input id="signup-phone" class="field-input" placeholder="+1 234 567 8900">
       </div>
-      <div class="err-msg" id="signup-err"></div>
+
+      <div class="field-group">
+        <label class="field-label">Create a 4-digit PIN</label>
+        <div class="pin-grid" id="signup-pins">
+          <div class="pin-dot" id="signup-pin-0"></div>
+          <div class="pin-dot" id="signup-pin-1"></div>
+          <div class="pin-dot" id="signup-pin-2"></div>
+          <div class="pin-dot" id="signup-pin-3"></div>
+        </div>
+        <div class="numpad" id="signup-numpad"></div>
+      </div>
+
       <button class="btn-main" onclick="window.doSignup()">Create Account</button>
+      <div class="err-msg" id="signup-err"></div>
+    </div>
+  </div>
+
+  <!-- PIN LOGIN MODAL -->
+  <div id="modal-pin" class="modal glass-sm">
+    <div class="modal-card">
+      <div class="modal-title" id="pin-title">Enter PIN</div>
+      <div class="pin-grid" id="login-pins" style="margin-bottom:20px">
+        <div class="pin-dot" id="login-pin-0"></div>
+        <div class="pin-dot" id="login-pin-1"></div>
+        <div class="pin-dot" id="login-pin-2"></div>
+        <div class="pin-dot" id="login-pin-3"></div>
+      </div>
+      <div class="numpad" id="login-numpad"></div>
+      <div class="err-msg" id="pin-err"></div>
+      <button class="btn-main" onclick="window.submitPin()" style="margin-top:20px">Login</button>
     </div>
   </div>
 </div>
 
 <!-- HOME SCREEN -->
 <div id="screen-home" class="screen">
-  <div class="topbar">
-    <div class="topbar-title">Pamoja</div>
-    <button class="topbar-back" onclick="window.goTo('screen-profile')">⚙️</button>
-  </div>
-  <div class="balance-card">
-    <div class="bal-label">Your Balance</div>
-    <div class="bal-amount" id="home-balance">KES 0</div>
-    <div class="bal-sub" id="home-net">Loading...</div>
-    <div class="bal-chips">
-      <div class="bal-chip chip-owed">Owed: KES <span id="home-owed">0</span></div>
-      <div class="bal-chip chip-owe">Owe: KES <span id="home-owe">0</span></div>
+  <div class="home-container">
+    <div class="header">
+      <div class="topbar" style="padding-bottom:0;padding-top:30px">
+        <div class="topbar-title">Pamoja</div>
+        <div class="topbar-back" onclick="window.goTo('screen-profile')">⚙️</div>
+      </div>
     </div>
+
+    <div class="balance-glass glass">
+      <div class="balance-label">Your Balance</div>
+      <div class="balance-amount" id="home-balance">KES 0</div>
+      <div class="balance-sub" id="home-net">Loading...</div>
+      <div class="balance-chips">
+        <div class="chip">Owed: <span id="home-owed">0</span> KES</div>
+        <div class="chip">Owe: <span id="home-owe">0</span> KES</div>
+      </div>
+    </div>
+
+    <div class="quick-buttons">
+      <div class="quick-btn glass-sm" onclick="window.goTo('screen-pay')">
+        <div class="quick-icon">💳</div>
+        <div class="quick-label">Send</div>
+      </div>
+      <div class="quick-btn glass-sm" onclick="window.goTo('screen-request')">
+        <div class="quick-icon">📤</div>
+        <div class="quick-label">Request</div>
+      </div>
+      <div class="quick-btn glass-sm" onclick="window.goTo('screen-id')">
+        <div class="quick-icon">🔐</div>
+        <div class="quick-label">My ID</div>
+      </div>
+    </div>
+
+    <div class="section-title">Recent</div>
+    <div class="tx-list" id="home-txs"></div>
   </div>
-  <div class="quick-row">
-    <button class="quick-btn" onclick="window.goTo('screen-pay')"><div class="q-icon qi-green">💳</div><div class="q-label">Send</div></button>
-    <button class="quick-btn" onclick="window.goTo('screen-request')"><div class="q-icon qi-amber">📤</div><div class="q-label">Request</div></button>
-    <button class="quick-btn" onclick="window.goTo('screen-mytoken')"><div class="q-icon qi-blue">🔐</div><div class="q-label">My ID</div></button>
-  </div>
-  <div class="section-title">Recent Transactions</div>
-  <div id="home-recent" class="person-list"></div>
 </div>
 
 <!-- PAY SCREEN -->
 <div id="screen-pay" class="screen">
-  <div class="topbar"><div class="topbar-title">Send Payment</div><button class="topbar-back" onclick="window.goTo('screen-home')">←</button></div>
-  <div class="pay-wrap">
-    <div class="field-group" style="margin-top:20px">
-      <label class="field-label">Send to (email)</label>
-      <input id="pay-recipient" class="field-input" placeholder="alice@example.com">
+  <div style="width:100%;height:100%;display:flex;flex-direction:column">
+    <div class="topbar">
+      <div class="topbar-title">Send Payment</div>
+      <div class="topbar-back" onclick="window.goTo('screen-home')">←</div>
     </div>
-    <div class="field-group">
-      <label class="field-label">Amount (KES)</label>
-      <div class="amount-big" id="pay-amount">0</div>
-      <div class="amount-numpad" id="amount-numpad"></div>
+
+    <div class="pay-container" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;justify-content:space-between">
+      <div>
+        <div class="input-section">
+          <label class="field-label" style="color:rgba(255,255,255,0.7)">To (username)</label>
+          <input id="pay-to" class="field-input" placeholder="alice" style="margin-top:8px">
+        </div>
+
+        <div class="input-section">
+          <label class="field-label" style="color:rgba(255,255,255,0.7)">Amount (KES)</label>
+          <div class="amount-display" id="pay-amount">0</div>
+          <div class="numpad" id="pay-numpad"></div>
+        </div>
+
+        <div class="input-section">
+          <label class="field-label" style="color:rgba(255,255,255,0.7)">Note (optional)</label>
+          <input id="pay-note" class="field-input" placeholder="Lunch, games..." style="margin-top:8px">
+        </div>
+
+        <div class="err-msg" id="pay-err"></div>
+      </div>
+
+      <button class="btn-main" onclick="window.doPay()" style="margin-bottom:20px">Send</button>
     </div>
-    <div class="field-group">
-      <label class="field-label">Note (optional)</label>
-      <textarea id="pay-note" class="pay-note" placeholder="Lunch, rent, etc" rows="2"></textarea>
-    </div>
-    <div class="err-msg" id="pay-err"></div>
-    <button class="btn-main" onclick="window.doPay()">Send Payment</button>
   </div>
 </div>
 
 <!-- REQUEST SCREEN -->
 <div id="screen-request" class="screen">
-  <div class="topbar"><div class="topbar-title">Request</div><button class="topbar-back" onclick="window.goTo('screen-home')">←</button></div>
-  <div style="padding:20px;flex:1;overflow-y:auto">
-    <div class="section-title">Who are you requesting from?</div>
-    <div id="request-list" class="person-list" style="padding:0"></div>
+  <div style="width:100%;height:100%;display:flex;flex-direction:column">
+    <div class="topbar">
+      <div class="topbar-title">Request Payment</div>
+      <div class="topbar-back" onclick="window.goTo('screen-home')">←</div>
+    </div>
+
+    <div class="tx-list" id="request-list" style="flex:1;overflow-y:auto"></div>
   </div>
 </div>
 
-<!-- MY TOKEN SCREEN -->
-<div id="screen-mytoken" class="screen">
-  <div class="topbar"><div class="topbar-title">Your ID</div><button class="topbar-back" onclick="window.goTo('screen-home')">←</button></div>
-  <div style="background:linear-gradient(135deg, #1A3A2A 0%, #2D5A3D 100%);margin:20px 16px;border-radius:24px;padding:36px 28px;text-align:center;color:white;box-shadow:0 12px 32px rgba(26,58,42,0.25)">
-    <div style="font-size:12px;opacity:.7;margin-bottom:6px">YOUR EMAIL (Account ID)</div>
-    <div class="token-code" id="token-display">loading...</div>
-    <button class="copy-btn" onclick="window.copyToken()">📋 Copy</button>
-  </div>
-  <div style="padding:20px;text-align:center;color:var(--txt3);font-size:13px">
-    <p>Share your email with others so they can send you payments.</p>
+<!-- MY ID SCREEN -->
+<div id="screen-id" class="screen">
+  <div style="width:100%;height:100%;display:flex;flex-direction:column">
+    <div class="topbar">
+      <div class="topbar-title">Your ID</div>
+      <div class="topbar-back" onclick="window.goTo('screen-home')">←</div>
+    </div>
+
+    <div style="flex:1;display:flex;align-items:center;justify-content:center;padding:20px">
+      <div class="glass" style="width:100%;max-width:360px;padding:40px;text-align:center;color:white">
+        <div style="font-size:12px;opacity:.7;margin-bottom:12px;text-transform:uppercase;letter-spacing:.1em;font-weight:600">Your Username</div>
+        <div style="font-family:'Courier New',monospace;font-size:32px;font-weight:700;margin-bottom:24px" id="id-display">username</div>
+        <button class="btn-main" onclick="window.copyUsername()">📋 Copy</button>
+        <div style="font-size:12px;opacity:.7;margin-top:20px;line-height:1.6">Share your username with others so they can send you payments</div>
+      </div>
+    </div>
   </div>
 </div>
 
 <!-- PROFILE SCREEN -->
 <div id="screen-profile" class="screen">
-  <div class="topbar"><div class="topbar-title">Profile</div><button class="topbar-back" onclick="window.goTo('screen-home')">←</button></div>
-  <div style="padding:20px;flex:1;overflow-y:auto">
-    <div style="background:var(--white);border-radius:16px;padding:20px;margin-bottom:20px;box-shadow:var(--shadow-sm)">
-      <div style="font-size:16px;font-weight:700;color:var(--txt)" id="profile-name">Loading...</div>
-      <div style="font-size:13px;color:var(--txt2);margin-top:8px" id="profile-email"></div>
-      <div style="font-size:13px;color:var(--txt2)" id="profile-phone"></div>
+  <div style="width:100%;height:100%;display:flex;flex-direction:column">
+    <div class="topbar">
+      <div class="topbar-title">Profile</div>
+      <div class="topbar-back" onclick="window.goTo('screen-home')">←</div>
     </div>
-    <button class="btn-main" style="background:var(--err);margin-top:0" onclick="window.doLogout()">Sign Out</button>
+
+    <div style="flex:1;overflow-y:auto;padding:20px">
+      <div class="glass profile-card">
+        <div class="profile-name" id="profile-username">username</div>
+        <div class="profile-info">
+          📱 <span id="profile-phone">Not set</span><br>
+          👤 Joined <span id="profile-joined">today</span>
+        </div>
+      </div>
+
+      <button class="logout-btn" onclick="window.doLogout()">Sign Out</button>
+    </div>
   </div>
 </div>
 
 <!-- REQUEST MODAL -->
-<div id="modal-request" class="modal-backdrop" onclick="if(event.target===this)window.closeModal('modal-request')">
+<div id="modal-request" class="modal glass-sm">
   <div class="modal-card">
     <div class="modal-title" id="req-title">Request from User</div>
-    <div style="margin-bottom:20px">
+    <div class="modal-content">
       <div class="field-group">
         <label class="field-label">Amount (KES)</label>
         <input id="req-amount" class="field-input" type="number" placeholder="500" min="1">
       </div>
       <div class="field-group">
         <label class="field-label">Note (optional)</label>
-        <textarea id="req-note" class="pay-note" placeholder="What's this for?" rows="2"></textarea>
+        <input id="req-note" class="field-input" placeholder="What for?">
       </div>
-      <div class="err-msg" id="req-err"></div>
     </div>
+    <div class="err-msg" id="req-err"></div>
     <button class="btn-main" onclick="window.submitRequest()">Send Request</button>
   </div>
 </div>
 
 <script>
-// Global state
 window.app = {
   supabase: null,
-  currentUser: null,
+  user: null,
+  pin: '',
+  loginPin: '',
+  loginUsername: '',
   payAmount: 0,
-  requestFromUser: null
+  requestUserId: null
 };
 
-// Initialize on load
-document.addEventListener('DOMContentLoaded', function() {
-  window.initApp();
-});
-
-// APP INITIALIZATION
-window.initApp = async function() {
-  const url = localStorage.getItem('supabase-url');
-  const key = localStorage.getItem('supabase-key');
-  
-  if (url && key) {
-    try {
-      window.app.supabase = window.supabase.createClient(url, key);
-      const { data: { session } } = await window.app.supabase.auth.getSession();
-      if (session?.user) {
-        window.app.currentUser = session.user;
-        const { data } = await window.app.supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', window.app.currentUser.id)
-          .single();
-        if (data) {
-          window.app.currentUser.display_name = data.display_name;
-          window.app.currentUser.phone = data.phone;
-        }
-        window.goTo('screen-home');
-        window.buildAmountNumpad();
-        window.renderHomeScreen();
-      } else {
-        window.goTo('screen-signup');
-      }
-    } catch (err) {
-      console.error('Init error:', err);
-    }
-  } else {
-    window.goTo('screen-config');
-  }
-};
-
-// CONFIG
-window.saveConfig = async function() {
-  const url = document.getElementById('config-url').value.trim();
-  const key = document.getElementById('config-key').value.trim();
-  const err = document.getElementById('config-err');
-  const success = document.getElementById('config-success');
-  
-  err.textContent = '';
-  success.textContent = '';
+// SETUP
+window.setupSupabase = async function() {
+  const url = document.getElementById('setup-url').value.trim();
+  const key = document.getElementById('setup-key').value.trim();
+  const err = document.getElementById('setup-err');
 
   if (!url || !key) {
-    err.textContent = 'Please enter both URL and Key';
+    err.textContent = 'Please enter URL and key';
     return;
   }
 
   try {
-    localStorage.setItem('supabase-url', url);
-    localStorage.setItem('supabase-key', key);
+    localStorage.setItem('sb-url', url);
+    localStorage.setItem('sb-key', key);
+    window.app.supabase = window.supabase.createClient(url, key);
     
-    success.textContent = 'Connected! Redirecting...';
-    setTimeout(() => window.location.reload(), 1500);
+    err.textContent = '';
+    await window.checkLogin();
   } catch (e) {
-    err.textContent = 'Error: ' + e.message;
+    err.textContent = 'Connection failed: ' + e.message;
+  }
+};
+
+window.checkLogin = async function() {
+  try {
+    const { data: { user } } = await window.app.supabase.auth.getUser();
+    if (user) {
+      const { data: profile } = await window.app.supabase
+        .from('profiles')
+        .select('*')
+        .eq('auth_id', user.id)
+        .single();
+      
+      if (profile) {
+        window.app.user = { ...user, ...profile };
+        window.goTo('screen-home');
+        window.renderHome();
+      } else {
+        window.goTo('screen-auth');
+      }
+    } else {
+      window.goTo('screen-auth');
+      window.buildNumpad('login');
+      window.buildNumpad('signup');
+    }
+  } catch (e) {
+    window.goTo('screen-auth');
   }
 };
 
@@ -370,7 +422,7 @@ window.saveConfig = async function() {
 window.switchTab = function(tab) {
   const loginTab = document.getElementById('login-tab');
   const signupTab = document.getElementById('signup-tab');
-  const tabs = document.querySelectorAll('.auth-tab');
+  const tabs = document.querySelectorAll('.tab-btn');
   
   if (tab === 'login') {
     loginTab.style.display = 'block';
@@ -385,70 +437,165 @@ window.switchTab = function(tab) {
   }
 };
 
-window.doLogin = async function() {
-  const email = document.getElementById('login-email').value.trim();
-  const password = document.getElementById('login-password').value;
+window.startLogin = async function() {
+  const username = document.getElementById('login-username').value.trim().toLowerCase();
   const err = document.getElementById('login-err');
   
   err.textContent = '';
-  if (!email || !password) {
-    err.textContent = 'Email and password required';
+  if (!username) {
+    err.textContent = 'Enter username';
     return;
   }
 
-  const { error } = await window.app.supabase.auth.signInWithPassword({ email, password });
-  if (error) {
-    err.textContent = error.message;
-  } else {
-    window.app.currentUser = (await window.app.supabase.auth.getSession()).data.session.user;
-    const { data } = await window.app.supabase.from('profiles').select('*').eq('id', window.app.currentUser.id).single();
-    if (data) {
-      window.app.currentUser.display_name = data.display_name;
-      window.app.currentUser.phone = data.phone;
-    }
-    window.toast('Welcome back!');
-    window.goTo('screen-home');
-    window.buildAmountNumpad();
+  const { data: users } = await window.app.supabase
+    .from('profiles')
+    .select('*')
+    .eq('username', username);
+
+  if (!users || users.length === 0) {
+    err.textContent = 'User not found';
+    return;
   }
+
+  window.app.loginUsername = username;
+  window.app.loginPin = '';
+  window.updatePinDisplay('login');
+  document.getElementById('pin-title').textContent = 'Enter PIN for ' + username;
+  document.getElementById('pin-err').textContent = '';
+  window.openModal('modal-pin');
+};
+
+window.submitPin = async function() {
+  const err = document.getElementById('pin-err');
+  
+  if (window.app.loginPin.length < 4) {
+    err.textContent = 'Enter 4-digit PIN';
+    return;
+  }
+
+  const { data: users } = await window.app.supabase
+    .from('profiles')
+    .select('*')
+    .eq('username', window.app.loginUsername);
+
+  if (!users || users.length === 0) {
+    err.textContent = 'User not found';
+    return;
+  }
+
+  if (users[0].pin !== window.app.loginPin) {
+    err.textContent = 'Wrong PIN';
+    window.app.loginPin = '';
+    window.updatePinDisplay('login');
+    return;
+  }
+
+  // Create/get auth
+  const email = users[0].username + '@pamoja.local';
+  const { data: authData, error: authError } = await window.app.supabase.auth.signInWithPassword({
+    email: email,
+    password: users[0].pin
+  }).catch(() => ({ data: null, error: null }));
+
+  if (!authData?.session) {
+    const { data: signupData } = await window.app.supabase.auth.signUp({
+      email: email,
+      password: users[0].pin
+    });
+    if (signupData.user) {
+      await window.app.supabase.from('profiles')
+        .update({ auth_id: signupData.user.id })
+        .eq('id', users[0].id);
+    }
+  }
+
+  window.app.user = users[0];
+  window.closeModal('modal-pin');
+  window.goTo('screen-home');
+  window.renderHome();
+  window.toast('Welcome, ' + window.app.user.username + '!');
+};
+
+window.loadAvatar = function(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  
+  const reader = new FileReader();
+  reader.onload = (evt) => {
+    window.app.avatarData = evt.target.result;
+    document.getElementById('avatar-display').innerHTML = `<img src="${evt.target.result}" style="width:100%;height:100%;object-fit:cover;border-radius:18px">`;
+  };
+  reader.readAsDataURL(file);
 };
 
 window.doSignup = async function() {
-  const name = document.getElementById('signup-name').value.trim();
-  const email = document.getElementById('signup-email').value.trim();
-  const password = document.getElementById('signup-password').value;
+  const username = document.getElementById('signup-username').value.trim().toLowerCase() || 'user' + Math.random().toString(36).substr(2, 5);
   const phone = document.getElementById('signup-phone').value.trim();
+  const pin = window.app.pin;
   const err = document.getElementById('signup-err');
-  
+
   err.textContent = '';
-  if (!name || !email || !password || !phone) {
-    err.textContent = 'All fields required';
-    return;
-  }
-  if (password.length < 6) {
-    err.textContent = 'Password 6+ characters';
+  if (pin.length < 4) {
+    err.textContent = 'Create a 4-digit PIN';
     return;
   }
 
-  const { data, error } = await window.app.supabase.auth.signUp({ email, password });
-  if (error) {
-    err.textContent = error.message;
-  } else {
-    await window.app.supabase.from('profiles').insert([{
-      id: data.user.id,
-      display_name: name,
-      phone: phone,
-      email: email
-    }]);
-    window.toast('Account created!');
-    window.doLogin();
+  // Check username exists
+  const { data: existing } = await window.app.supabase
+    .from('profiles')
+    .select('id')
+    .eq('username', username);
+
+  if (existing && existing.length > 0) {
+    err.textContent = 'Username taken';
+    return;
+  }
+
+  try {
+    const email = username + '@pamoja.local';
+    const { data: authData } = await window.app.supabase.auth.signUp({
+      email: email,
+      password: pin
+    });
+
+    if (authData.user) {
+      const { error: insertError } = await window.app.supabase.from('profiles').insert([{
+        auth_id: authData.user.id,
+        username: username,
+        phone: phone,
+        pin: pin,
+        avatar: window.app.avatarData || null
+      }]);
+
+      if (insertError) {
+        err.textContent = insertError.message;
+      } else {
+        window.app.user = {
+          id: authData.user.id,
+          username: username,
+          phone: phone,
+          pin: pin,
+          avatar: window.app.avatarData
+        };
+        
+        window.goTo('screen-home');
+        window.renderHome();
+        window.toast('Welcome, ' + username + '!');
+      }
+    }
+  } catch (e) {
+    err.textContent = 'Error: ' + e.message;
   }
 };
 
 window.doLogout = async function() {
   if (!confirm('Sign out?')) return;
   await window.app.supabase.auth.signOut();
-  window.app.currentUser = null;
-  window.goTo('screen-signup');
+  window.app.user = null;
+  window.app.pin = '';
+  window.goTo('screen-auth');
+  document.getElementById('login-username').value = '';
+  document.getElementById('login-err').textContent = '';
 };
 
 // NAVIGATION
@@ -458,18 +605,18 @@ window.goTo = function(screenId) {
 };
 
 // HOME
-window.renderHomeScreen = async function() {
-  if (!window.app.currentUser) return;
-  
+window.renderHome = async function() {
+  if (!window.app.user) return;
+
   const { data: txs } = await window.app.supabase
     .from('transactions')
     .select('*')
-    .or(`from_user.eq.${window.app.currentUser.id},to_user.eq.${window.app.currentUser.id}`);
+    .or(`from_id.eq.${window.app.user.id},to_id.eq.${window.app.user.id}`);
 
   let owed = 0, owe = 0;
   (txs || []).forEach(tx => {
-    if (tx.to_user === window.app.currentUser.id) owed += tx.amount;
-    if (tx.from_user === window.app.currentUser.id) owe += tx.amount;
+    if (tx.to_id === window.app.user.id) owed += tx.amount;
+    if (tx.from_id === window.app.user.id) owe += tx.amount;
   });
 
   const balance = owed - owe;
@@ -480,138 +627,185 @@ window.renderHomeScreen = async function() {
 
   const { data: recent } = await window.app.supabase
     .from('transactions')
-    .select(`*,
-      from_profile:from_user(display_name),
-      to_profile:to_user(display_name)
-    `)
-    .or(`from_user.eq.${window.app.currentUser.id},to_user.eq.${window.app.currentUser.id}`)
+    .select('*, from_user:from_id(username), to_user:to_id(username)')
+    .or(`from_id.eq.${window.app.user.id},to_id.eq.${window.app.user.id}`)
     .order('created_at', { ascending: false })
-    .limit(5);
+    .limit(8);
 
   if (!recent || recent.length === 0) {
-    document.getElementById('home-recent').innerHTML = '<div class="empty-state">No transactions yet</div>';
+    document.getElementById('home-txs').innerHTML = '<div class="empty-state">No transactions yet</div>';
     return;
   }
 
-  document.getElementById('home-recent').innerHTML = (recent || []).map(tx => {
-    const isFrom = tx.from_user === window.app.currentUser.id;
-    const other = isFrom ? tx.to_profile : tx.from_profile;
+  document.getElementById('home-txs').innerHTML = (recent || []).map(tx => {
+    const isFrom = tx.from_id === window.app.user.id;
+    const other = isFrom ? tx.to_user : tx.from_user;
     return `
-      <div class="tx-item">
-        <div class="tx-icon" style="background:${isFrom?'#FFF4E0':'var(--gp)'};color:${isFrom?'var(--amb)':'var(--gl)'}">💳</div>
+      <div class="tx-item glass-sm">
+        <div class="tx-avatar">${isFrom ? '→' : '←'}</div>
         <div class="tx-body">
-          <div class="tx-name">${isFrom?'→ '+other.display_name:other.display_name+' →'}</div>
-          <div class="tx-note">${tx.description||'—'}</div>
+          <div class="tx-name">${other.username}</div>
+          <div class="tx-note">${tx.note || '—'}</div>
         </div>
-        <div class="tx-amount" style="color:${isFrom?'#B91C1C':'var(--gl)'}">${isFrom?'-':'+'}KES ${tx.amount.toLocaleString()}</div>
+        <div class="tx-amount">${isFrom ? '-' : '+'}KES ${tx.amount.toLocaleString()}</div>
       </div>
     `;
   }).join('');
 };
 
 // PAY
-window.buildAmountNumpad = function() {
-  const container = document.getElementById('amount-numpad');
+window.buildNumpad = function(type) {
+  const id = type === 'login' ? 'login-numpad' : type === 'signup' ? 'signup-numpad' : 'pay-numpad';
+  const container = document.getElementById(id);
   container.innerHTML = '';
+  
   for (let i = 1; i <= 9; i++) {
     const btn = document.createElement('button');
-    btn.className = 'an-btn';
+    btn.className = 'numpad-btn';
     btn.textContent = i;
-    btn.onclick = () => window.addAmount(i);
+    btn.onclick = () => {
+      if (type === 'login') window.addLoginPin(i);
+      else if (type === 'signup') window.addSignupPin(i);
+      else window.addPayAmount(i);
+    };
     container.appendChild(btn);
   }
-  container.appendChild(document.createElement('button'));
-  const delBtn = document.createElement('button');
-  delBtn.className = 'an-btn';
-  delBtn.textContent = '⌫';
-  delBtn.onclick = () => window.removeAmount();
-  container.appendChild(delBtn);
+
+  const empty = document.createElement('button');
+  empty.className = 'numpad-btn empty';
+  container.appendChild(empty);
+
+  const del = document.createElement('button');
+  del.className = 'numpad-btn del';
+  del.textContent = '⌫';
+  del.onclick = () => {
+    if (type === 'login') window.removeLoginPin();
+    else if (type === 'signup') window.removeSignupPin();
+    else window.removePayAmount();
+  };
+  container.appendChild(del);
 };
 
-window.addAmount = function(num) {
+window.addSignupPin = function(num) {
+  if (window.app.pin.length < 4) {
+    window.app.pin += num;
+    window.updatePinDisplay('signup');
+  }
+};
+
+window.removeSignupPin = function() {
+  window.app.pin = window.app.pin.slice(0, -1);
+  window.updatePinDisplay('signup');
+};
+
+window.addLoginPin = function(num) {
+  if (window.app.loginPin.length < 4) {
+    window.app.loginPin += num;
+    window.updatePinDisplay('login');
+  }
+};
+
+window.removeLoginPin = function() {
+  window.app.loginPin = window.app.loginPin.slice(0, -1);
+  window.updatePinDisplay('login');
+};
+
+window.updatePinDisplay = function(type) {
+  const pin = type === 'signup' ? window.app.pin : window.app.loginPin;
+  const prefix = type === 'signup' ? 'signup' : 'login';
+  
+  for (let i = 0; i < 4; i++) {
+    const dot = document.getElementById(prefix + '-pin-' + i);
+    if (i < pin.length) {
+      dot.classList.add('filled');
+      dot.textContent = '•';
+    } else {
+      dot.classList.remove('filled');
+      dot.textContent = '';
+    }
+  }
+};
+
+window.addPayAmount = function(num) {
   window.app.payAmount = (window.app.payAmount * 10 + num);
   if (window.app.payAmount > 9999999) window.app.payAmount = 9999999;
   document.getElementById('pay-amount').textContent = window.app.payAmount.toLocaleString();
 };
 
-window.removeAmount = function() {
+window.removePayAmount = function() {
   window.app.payAmount = Math.floor(window.app.payAmount / 10);
   document.getElementById('pay-amount').textContent = window.app.payAmount.toLocaleString();
 };
 
 window.doPay = async function() {
-  const recipient = document.getElementById('pay-recipient').value.trim();
+  const to = document.getElementById('pay-to').value.trim().toLowerCase();
   const note = document.getElementById('pay-note').value.trim();
   const err = document.getElementById('pay-err');
   
   err.textContent = '';
-  if (!recipient || window.app.payAmount <= 0) {
+  if (!to || window.app.payAmount <= 0) {
     err.textContent = 'Enter recipient and amount';
     return;
   }
 
-  const { data } = await window.app.supabase
+  const { data: users } = await window.app.supabase
     .from('profiles')
     .select('id')
-    .or(`email.eq.${recipient},display_name.ilike.${recipient}`)
-    .limit(1);
+    .eq('username', to);
 
-  if (!data || data.length === 0) {
+  if (!users || users.length === 0) {
     err.textContent = 'User not found';
     return;
   }
-  if (data[0].id === window.app.currentUser.id) {
+
+  if (users[0].id === window.app.user.id) {
     err.textContent = 'Cannot pay yourself';
     return;
   }
 
-  const { error } = await window.app.supabase
-    .from('transactions')
-    .insert([{
-      from_user: window.app.currentUser.id,
-      to_user: data[0].id,
-      amount: window.app.payAmount,
-      description: note
-    }]);
+  const { error } = await window.app.supabase.from('transactions').insert([{
+    from_id: window.app.user.id,
+    to_id: users[0].id,
+    amount: window.app.payAmount,
+    note: note
+  }]);
 
   if (error) {
     err.textContent = error.message;
   } else {
-    window.toast('Payment sent!');
+    window.toast('Sent ' + window.app.payAmount + ' KES!');
     window.app.payAmount = 0;
-    document.getElementById('pay-amount').textContent = '0';
+    document.getElementById('pay-to').value = '';
     document.getElementById('pay-note').value = '';
-    document.getElementById('pay-recipient').value = '';
-    window.renderHomeScreen();
+    document.getElementById('pay-amount').textContent = '0';
+    window.renderHome();
     window.goTo('screen-home');
   }
 };
 
 // REQUEST
 window.renderRequestScreen = async function() {
-  const { data } = await window.app.supabase
+  const { data: users } = await window.app.supabase
     .from('profiles')
     .select('*')
-    .neq('id', window.app.currentUser.id)
+    .neq('id', window.app.user.id)
     .limit(50);
 
-  document.getElementById('request-list').innerHTML = (data || []).map(u => `
-    <div class="person-card" onclick="window.openRequestModal('${u.id}', '${u.display_name}')">
-      <div class="p-avatar" style="background:${window.avatarBg(u.id)}">
-        ${window.initials(u.display_name)}
+  document.getElementById('request-list').innerHTML = (users || []).map(u => `
+    <div class="tx-item glass-sm" onclick="window.openRequestModal('${u.id}', '${u.username}')">
+      <div class="tx-avatar">${u.username.substring(0,1).toUpperCase()}</div>
+      <div class="tx-body">
+        <div class="tx-name">${u.username}</div>
+        <div class="tx-note">${u.phone || 'No phone'}</div>
       </div>
-      <div class="p-info">
-        <div class="p-name">${u.display_name}</div>
-        <div class="p-sub">${u.email}</div>
-      </div>
-      <div style="font-size:18px">→</div>
+      <div style="color:rgba(255,255,255,0.6);font-size:18px">→</div>
     </div>
   `).join('');
 };
 
-window.openRequestModal = function(userId, userName) {
-  window.app.requestFromUser = userId;
-  document.getElementById('req-title').textContent = 'Request from ' + userName;
+window.openRequestModal = function(userId, username) {
+  window.app.requestUserId = userId;
+  document.getElementById('req-title').textContent = 'Request from ' + username;
   document.getElementById('req-amount').value = '';
   document.getElementById('req-note').value = '';
   document.getElementById('req-err').textContent = '';
@@ -628,14 +822,12 @@ window.submitRequest = async function() {
     return;
   }
 
-  const { error } = await window.app.supabase
-    .from('transactions')
-    .insert([{
-      from_user: window.app.requestFromUser,
-      to_user: window.app.currentUser.id,
-      amount: amount,
-      description: note
-    }]);
+  const { error } = await window.app.supabase.from('transactions').insert([{
+    from_id: window.app.requestUserId,
+    to_id: window.app.user.id,
+    amount: amount,
+    note: note
+  }]);
 
   if (error) {
     err.textContent = error.message;
@@ -643,32 +835,22 @@ window.submitRequest = async function() {
     window.toast('Request sent!');
     window.closeModal('modal-request');
     window.renderRequestScreen();
-    window.goTo('screen-home');
   }
 };
 
 // PROFILE
-window.renderProfileScreen = function() {
-  document.getElementById('profile-name').textContent = window.app.currentUser.display_name;
-  document.getElementById('profile-email').textContent = window.app.currentUser.email;
-  document.getElementById('profile-phone').textContent = window.app.currentUser.phone;
-  document.getElementById('token-display').textContent = window.app.currentUser.email;
+window.renderProfile = function() {
+  document.getElementById('profile-username').textContent = window.app.user.username;
+  document.getElementById('profile-phone').textContent = window.app.user.phone || 'Not set';
+  document.getElementById('id-display').textContent = window.app.user.username;
 };
 
-window.copyToken = function() {
-  navigator.clipboard.writeText(window.app.currentUser.email).then(() => window.toast('Copied!')).catch(() => window.toast(window.app.currentUser.email));
+window.copyUsername = function() {
+  navigator.clipboard.writeText(window.app.user.username);
+  window.toast('Username copied!');
 };
 
 // UTILS
-window.avatarBg = function(id) {
-  const colors = ['#4A8C63', '#D4821A', '#185FA5', '#6B4C9A', '#C1554A'];
-  return colors[id.charCodeAt(0) % colors.length];
-};
-
-window.initials = function(name) {
-  return name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
-};
-
 window.openModal = function(id) {
   document.getElementById(id).classList.add('active');
 };
@@ -685,23 +867,32 @@ window.toast = function(msg) {
   setTimeout(() => el.remove(), 2000);
 };
 
-// Close modals on backdrop
-document.querySelectorAll('.modal-backdrop').forEach(bd => {
-  bd.addEventListener('click', e => {
-    if (e.target === bd) e.target.classList.remove('active');
-  });
-});
-
-// Navigate to home when button clicked
+// CLICK HANDLERS FOR SCREENS
 document.addEventListener('click', function(e) {
-  if (e.target.id === 'home-recent' || e.target.closest('#home-recent')) return;
-  if (e.target.onclick && e.target.onclick.toString().includes('goTo')) {
-    const match = e.target.onclick.toString().match(/'([^']+)'/);
-    if (match && match[1] === 'screen-home') {
-      setTimeout(() => window.renderHomeScreen(), 100);
-    }
+  if (document.getElementById('screen-request').classList.contains('active') && 
+      e.target.closest('#request-list')) {
+    setTimeout(() => window.renderRequestScreen(), 100);
+  }
+  if (document.getElementById('screen-home').classList.contains('active')) {
+    window.renderHome();
+  }
+  if (document.getElementById('screen-profile').classList.contains('active')) {
+    window.renderProfile();
   }
 });
+
+// INIT
+const sbUrl = localStorage.getItem('sb-url');
+const sbKey = localStorage.getItem('sb-key');
+if (sbUrl && sbKey) {
+  window.app.supabase = window.supabase.createClient(sbUrl, sbKey);
+  window.checkLogin();
+} else {
+  window.goTo('screen-setup');
+}
+
+// Setup pay numpad on load
+window.buildNumpad('pay');
 </script>
 </body>
 </html>
